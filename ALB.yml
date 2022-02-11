@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  HostZoneId:
+    Type: String
+    Default: ''
+    #Existing HostZoneId
+  SubDomain:
+    Type: String
+    Default: ''
+    #SubDomain Name
+  MyglobalIP:
+    Description: SecurityGroup for SSH into EC2
+    Type: String
+Resources:
+###
+#ALB TargetGroup
+### 
+  TargetGroup: 
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties: 
+      VpcId: !ImportValue VPCCIDR
+      Name: kadai-ALB-TargetGroup
+      Protocol: HTTP
+      ProtocolVersion: HTTP1
+      Port: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: "/index.html"
+      HealthCheckPort: "traffic-port"
+      HealthCheckEnabled: true
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 2
+      HealthCheckTimeoutSeconds: 5
+      HealthCheckIntervalSeconds: 30
+      Matcher: 
+        HttpCode: 200
+      Targets: 
+        - Id: !ImportValue WebSV
+          Port: 80
+  InternetALB: 
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties: 
+      Name: kadaiALB
+      Scheme: internet-facing
+      SecurityGroups:
+        - !ImportValue ALBSG
+      Subnets: 
+        - !ImportValue PrivateSubnetc
+        - !ImportValue PrivateSubnetd
+###
+#ALB Listener(HTTPS)
+###
+  ALBListenerHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref ACM
+      DefaultActions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref InternetALB
+###
+#Security Group for SSH into EC2
+###
+  ALBSecurityGroupIngress2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !ImportValue ALBSG
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: !Ref MyglobalIP
+###
+#Subdomains
+###
+  DnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Sub '${HostZoneId}'
+      Comment: "DNS for ALB"
+      Name: !Sub '${SubDomain}'
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt 'InternetALB.CanonicalHostedZoneID'
+        DNSName: !GetAtt 'InternetALB.DNSName'
+###
+#Certificate in AWS Certificate Manager 
+###
+  ACM:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub '${SubDomain}'
+      DomainValidationOptions:
+        - DomainName: !Sub '${SubDomain}'
+          HostedZoneId: !Sub '${HostZoneId}'
+      ValidationMethod: DNS

@@ -1,0 +1,64 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  InstanceName:
+    Type: String
+    Default: 'kadaiMySQL'
+  MysqlVer:
+    Type: String
+    Default: '8.0.26'
+  MysqlID:
+    Type: String
+    Default: ''
+  MysqlPass:
+    Type: String
+    Default: ''
+Resources:
+###
+#MySQL Instance
+### 
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Ref InstanceName
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      DBParameterGroupName: !Ref DBParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !ImportValue RDSSG
+      Engine: mysql
+      EngineVersion: !Ref MysqlVer
+      MasterUsername: !Ref MysqlID
+      MasterUserPassword: !Ref MysqlPass
+      StorageType: gp2
+###
+#SubnetGroup
+### 
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: kadai-RDSsubnetGroup
+      SubnetIds:
+        - !ImportValue PrivateSubnetc
+        - !ImportValue PrivateSubnetd
+      DBSubnetGroupName: kadai-RDSsubnetGroup
+###
+#ParameterGroup
+### 
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: Custom Paramter Group
+      Family: mysql8.0
+      Parameters:
+        character_set_database: utf8mb4
+        character_set_client: utf8mb4
+        character_set_connection: utf8mb4
+        character_set_results: utf8mb4
+        character_set_server: utf8mb4
+Outputs:
+  DBInstanceOutput:
+    Value:
+      Ref: DBInstance
+    Export:
+      Name: RDSmysql
