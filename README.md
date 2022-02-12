@@ -1,4 +1,3 @@
-# IaC
 ブログの構成図（マネージドコンソールで作成）をもとにCloudFormationでコード化<br>
 https://note.com/etudier_noter/n/n05c0c2aeb3f8<br>
 <br>
