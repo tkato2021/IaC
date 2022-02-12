@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  VPCCidr:
+    Type: String
+    Default: '172.16.0.0/16'
+  PublicSubnet1c:
+    Type: String
+    Default: '172.16.1.0/24'
+  PublicSubnet1d:
+    Type: String
+    Default: '172.16.4.0/24'
+  PrivateSubnet1c:
+    Type: String
+    Default: '172.16.2.0/24'
+  PrivateSubnet1d:
+    Type: String
+    Default: '172.16.3.0/24'
+Resources:
+###
+#VPC
+### 
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidr
+      Tags:
+      - Key: Name
+        Value: kadai-VPCCider
+###
+#PublicSubnet
+### 
+  PublicSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PublicSubnet1c
+      VpcId: 
+        Ref: Vpc
+      AvailabilityZone: "ap-northeast-1c"
+      Tags:
+      - Key: Name
+        Value: Kadai-PublicSubnetC
+  PublicSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PublicSubnet1d
+      VpcId: 
+        Ref: Vpc
+      AvailabilityZone: "ap-northeast-1d"
+      Tags:
+      - Key: Name
+        Value: Kadai-PublicSubnetD
+###
+#PrivateSubnet
+### 
+  PrivateSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PrivateSubnet1c
+      VpcId: 
+        Ref: Vpc
+      AvailabilityZone: "ap-northeast-1c"
+      Tags:
+      - Key: Name
+        Value: Kadai-PrivateSubnetC
+  PrivateSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PrivateSubnet1d
+      VpcId: 
+        Ref: Vpc
+      AvailabilityZone: "ap-northeast-1d"
+      Tags:
+      - Key: Name
+        Value: Kadai-PrivateSubnetD
+###
+#InternetGateway
+### 
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Kadai-IGW
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref IGW
+###
+#Public RouteTable
+### 
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: kadai-Public-RouteTable
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IGW
+  AssociationPublic1c:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetC
+      RouteTableId: !Ref PublicRouteTable
+  AssociationPublic1d:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetD
+      RouteTableId: !Ref PublicRouteTable
+###
+#Private RouteTable
+### 
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: kadai-Private-RouteTable
+  AssociationPrivate1c:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetC
+      RouteTableId: !Ref PrivateRouteTable
+  AssociationPrivate1d:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetD
+      RouteTableId: !Ref PrivateRouteTable
+Outputs:
+  Vpc:
+    Value:  
+      Ref: Vpc
+    Export:
+      Name: VPCCIDR
+  PublicSubnetC:
+    Value:  
+      Ref: PublicSubnetC
+    Export:
+      Name: PublicSubnetc
+  PublicSubnetD:
+    Value:  
+      Ref: PublicSubnetD
+    Export:
+      Name: PublicSubnetd
+  PrivateSubnetC:
+    Value:  
+      Ref: PrivateSubnetC
+    Export:
+      Name: PrivateSubnetc
+  PrivateSubnetD:
+    Value:  
+      Ref: PrivateSubnetD
+    Export:
+      Name: PrivateSubnetd

@@ -1,0 +1,12 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources: 
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub kadai-webapp-${AWS::AccountId}
+      AccessControl: Private
+Outputs:
+  S3BucketOutputs:
+    Value: !Ref S3Bucket
+    Export:
+      Name: S3Bucket
